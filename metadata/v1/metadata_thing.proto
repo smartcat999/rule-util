@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package mdmp.metadata;
+option go_package = "v1";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "metadata/v1/metadata_model.proto";
+
+
+service Thing {
+    rpc Connect (ConnectRequest) returns (ConnectResponse);
+    rpc Disconnect (DisConnectRequest) returns (DisConnectResponse);
+    rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse);
+
+    // Entity (Device...)
+    rpc Entity (EntityRequest) returns (EntityResponse);
+    rpc EntityReport (EntityInfoRequest) returns (EntityResponse);
+}
+
+
+message ConnectRequest {
+    RequestHeader header = 2;
+    int64 packet_id = 10;
+    Entity source = 11;
+    string server = 12;
+    SessionType session_type = 13; //期望会话 session_type
+    bytes payload = 14;
+}
+
+message ConnectResponse {
+    ResponseHeader header = 2;
+    int64 packet_id = 10;
+    Entity source = 11;
+    SessionType session_type = 12; //会话 session_type
+}
+
+message DisConnectRequest {
+    RequestHeader header = 2;
+    int64 packet_id = 10;
+    Entity source = 11;
+}
+
+message DisConnectResponse {
+    ResponseHeader header = 2;
+    int64 packet_id = 10;
+    bool dup = 11;
+}
+
+message HeartbeatRequest {
+    RequestHeader header = 2;
+    int64 packet_id = 10;
+    Entity source = 11;
+    string server = 12;
+    string entity_id = 13;
+}
+
+message HeartbeatResponse {
+    ResponseHeader header = 2;
+    int64 packet_id = 10;
+}
+
+
+message EntityRequest {
+    RequestHeader header = 2;
+    int64 packet_id = 10;
+    string entity_id = 11;
+    //  string entity_type = 12;
+    //  bool reload = 13;
+}
+
+message EntityResponse {
+    ResponseHeader header = 2;
+    int64 packet_id = 10;
+    Entity entity = 11;
+}
+
+
+message EntityInfoRequest {
+    enum Status {
+        Noop = 0;
+        NotReachable = -1;
+        OK200 = 200;
+        NotFound404 = 404;
+        InternalServerError500 = 500;
+    }
+    RequestHeader header = 2;
+    int64 packet_id = 10;
+    Entity entity = 11;
+    Status status = 12;
+    string topic = 13;
+}

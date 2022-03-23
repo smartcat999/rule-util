@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package mdmp.metadata;
+option go_package = "v1";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "metadata/v1/metadata_model.proto";
+
+service North {
+    rpc Deliver (NorthRequest) returns (NorthResponse);
+}
+
+message NorthRequest {
+    RequestHeader header = 2;
+    ProtoMessage body = 10;
+}
+
+message NorthResponse {
+    enum Status {
+        FAIL = 0;
+        OK = 200;
+    }
+    ResponseHeader header = 2;
+    Status status = 10;
+}

@@ -1,0 +1,146 @@
+syntax = "proto3";
+
+package mdmp.metadata;
+option go_package = "v1";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "metadata/v1/metadata_model.proto";
+import "github.com/gogo/googleapis/google/api/annotations.proto";
+
+
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.equal_all) = false;
+option (gogoproto.gostring_all) = false;
+option cc_enable_arenas = true;
+
+
+service JobManager {
+    // Restore return init config and snapshot data
+    rpc Restore (RestoreRequest) returns (stream RestoreResponse);
+
+    // Sync return event data
+    rpc Sync (SyncRequest) returns (stream SyncResponse);
+
+}
+
+//rpc Range (SubscriptionRangeResponse) returns (stream SubscriptionRangeResponse);
+message RestoreRequest {
+    RequestHeader header = 2;
+    // revision is the point-in-time of the key-value store to use for the range.
+    // If revision is less or equal to zero, the range is over the newest key-value store.
+    // If the revision has been compacted, ErrCompacted is returned as a response.
+    int64 revision = 10;
+}
+
+message RestoreResponse {
+    ResponseHeader header = 2;
+    oneof body {
+        InitResponse init_config = 10;
+        ResourceResponse resource = 11;
+        SubValueResponse subscription = 12;
+        RuleValueResponse rules = 13;
+    }
+}
+
+message InitResponse {
+}
+
+
+message ResourceResponse {
+    repeated Flow source = 10;
+    Flow sink = 11;
+}
+
+message SubValueResponse {
+    repeated SubscriptionValue subscriptions = 10;
+    // more indicates if there are more Subscriptions to return in the requested range.
+    bool more = 11;
+    // count is set to the number of Subscriptions within the range when requested.
+    int64 count = 12;
+    // revision is set to the revision of start range.
+    int64 start_revision = 13;
+}
+message RuleValueResponse {
+    repeated RuleValue rules = 10;
+    // more indicates if there are more Rules to return in the requested range.
+    bool more = 11;
+    // count is set to the number of Rules within the range when requested.
+    int64 count = 12;
+    // revision is set to the revision of start range.
+    int64 start_revision = 13;
+}
+
+//rpc Watch (WatchRequest) returns (stream WatchResponse);
+message SyncRequest {
+    RequestHeader header = 2;
+    // key is the key to register for watching.
+    bytes key = 10;
+    // range_end is the end of the range [key, range_end) to watch. If range_end is not given,
+    // only the key argument is watched. If range_end is equal to '\0', all keys greater than
+    // or equal to the key argument are watched.
+    // If the range_end is one bit larger than the given key,
+    // then all keys with the prefix (the given key) will be watched.
+    bytes range_end = 11;
+    // start_revision is an optional revision to watch from (inclusive). No start_revision is "now".
+    int64 start_revision = 12;
+    // If watch_id is provided and non-zero, it will be assigned to this watcher.
+    // Since creating a watcher in etcd is not a synchronous operation,
+    // this can be used ensure that ordering is correct when creating multiple
+    // watchers on the same stream. Creating a watcher with an ID already in
+    // use on the stream will cause an error to be returned.
+    int64 watch_id = 13;
+}
+
+
+message RuleWatchResponse {
+    repeated RuleEvent events = 3;
+}
+
+message SyncResponse {
+    ResponseHeader header = 2;
+    // watch_id is the ID of the watcher that corresponds to the response.
+    int64 watch_id = 10;
+    oneof body {
+        SlotEventResponse init_config = 11;
+        SubEventResponse subscription = 12;
+        RuleEventResponse rules = 13;
+    }
+}
+
+message SlotEventResponse {
+}
+
+message SubEventResponse {
+    repeated SubscriptionEvent events = 1;
+}
+
+message RuleEventResponse {
+    repeated RuleEvent events = 1;
+}
+
+// rpc Report (ReportRequest) returns (ReportResponse);
+// Used to report telemetry after performing one or more actions.
+message ReportRequest {
+    RequestHeader header = 2;
+    string ver = 4;
+    string resource_id = 10;
+    ReportType type = 11;
+    bytes payload = 12;
+}
+
+// Used to carry responses to telemetry reports
+message ReportResponse {
+    ResponseHeader header = 2;
+}
+
+// rpc RPC (stream CMDRequest) returns (stream CMDResponse);
+enum ReportType {
+    OP_HANDSHAKE = 0;
+    OP_HANDSHAKE_REPLY = 1;
+    OP_HEARTBEAT = 2;
+    OP_HEARTBEAT_REPLY = 3;
+    OP_STATUS = 4;
+    // OP_STATUS_REPLY = 5;
+    OP_SEND_CMD = 10;
+    OP_SEND_CMD_REPLY = 11;
+}

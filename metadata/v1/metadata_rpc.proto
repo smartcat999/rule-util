@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package mdmp.metadata;
+option go_package = "v1";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "metadata/v1/metadata_model.proto";
+import "github.com/gogo/googleapis/google/api/annotations.proto";
+
+
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.equal_all) = false;
+option (gogoproto.gostring_all) = false;
+option cc_enable_arenas = true;
+
+
+service Cluster {
+    // Inversion-of-control Service
+    rpc Command (stream RpcPacket) returns (stream RpcPacket);
+}
+
+enum OpType {
+    OP_HANDSHAKE = 0;
+    OP_HANDSHAKE_REPLY = 1;
+    OP_HEARTBEAT = 2;
+    OP_HEARTBEAT_REPLY = 3;
+    OP_STATUS = 4;
+    // OP_STATUS_REPLY = 5;
+    OP_SEND_CMD = 10;
+    OP_SEND_CMD_REPLY = 11;
+}
+
+// rpc RPC (stream CMDRequest) returns (stream CMDResponse);
+message RpcPacket {
+    RequestHeader header = 2;
+    ClusterInfo cluster = 3;
+    string ver = 4;
+    string resource_id = 10;
+    OpType op = 11;
+    bytes payload = 12;
+}
+
+
+message ClusterInfo {
+    string name = 1;
+    string source = 2;
+}
+
+message RpcStatus {
+    enum Status {
+        OK = 0;
+        Error = 1;
+    }
+    Status status = 1;
+    string message = 2;
+}
+
+message QueryAction {
+    Entity entity = 1;
+}

@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package mdmp.metadata;
+option go_package = "v1";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "metadata/v1/metadata_model.proto";
+import "github.com/gogo/googleapis/google/api/annotations.proto";
+
+
+service PubSub {
+    //Status
+    rpc Ping (PingRequest) returns (PongResponse);
+    // Pub/sub
+    rpc Subscribe (SubRequest) returns (SubResponse);
+    rpc Unsubscribe (UnsubRequest) returns (UnsubResponse);
+    rpc ListSubscriptions (SubscriptionRequest) returns (SubscribersResponse);
+}
+
+//rpc Subscribe (SubRequest) returns (SubResponse);
+message SubRequest {
+    RequestHeader header = 2;
+    int64 packet_id = 10;
+    repeated Subscription subscriptions = 11;
+    Entity source = 12;
+}
+message SubResponse {
+    ResponseHeader header = 2;
+    int64 packet_id = 10;
+    repeated SubscriptionReply replies = 11;
+    Entity source = 12;
+}
+
+//rpc Unsubscribe (UnsubRequest) returns (UnsubResponse);
+message UnsubRequest {
+    RequestHeader header = 2;
+    int64 packet_id = 10;
+    Entity source = 11;
+    repeated Subscription subscriptions = 12;
+}
+
+message UnsubResponse {
+    ResponseHeader header = 2;
+    int64 packet_id = 10;
+    Entity source = 11;
+}
+
+//ListSubscribersBySubscription (SubscriptionRequest) returns (SubscribersResponse);
+message SubscriptionRequest {
+    ResponseHeader header = 2;
+    int64 packet_id = 10;
+    Subscription subscription = 11;
+}
+message SubscribersResponse {
+    ResponseHeader header = 2;
+    int64 packet_id = 10;
+    repeated Entity subscribers = 11;
+}
+
+
+

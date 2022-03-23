@@ -1,0 +1,232 @@
+syntax = "proto3";
+
+package mdmp.metadata;
+option go_package = "v1";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "github.com/gogo/googleapis/google/api/annotations.proto";
+import "github.com/mwitkow/go-proto-validators/validator.proto";
+
+import "google/protobuf/timestamp.proto";
+//import "google/protobuf/duration.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.equal_all) = false;
+option (gogoproto.gostring_all) = false;
+option cc_enable_arenas = true;
+
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+option (gogoproto.unmarshaler_all) = true;
+
+enum QoS {
+    QoS0 = 0;
+    QoS1 = 1;
+    QoS2 = 2;
+}
+
+message Empty {
+}
+
+//------------ Multi-Domain ------------
+message RequestHeader {
+    string user_id = 1;
+    string app_id = 2;
+    string node_id = 3;
+}
+
+message ResponseHeader {
+    string user_id = 1;
+    string app_id = 2;
+    string node_id = 3;
+    int32 err_code = 10;
+    string err_msg = 11;
+}
+
+message PingRequest {
+    RequestHeader header = 2;
+}
+message PongResponse {
+    ResponseHeader header = 2;
+}
+//------------ Multi-Domain(END) ------------
+
+//------------ Entity ------------
+message Entity {
+    enum EntityStatus {
+        Offline = 0;
+        Online = 1;
+        Disable = -1;
+    }
+    //Entity Id
+    string id = 2;
+    EntityStatus status = 3;
+    int64 refresh_time = 4;
+    DeviceInfo device_info = 5;
+    EntityInfo entity_info = 6;
+}
+
+message DeviceInfo {
+    string addr = 2;
+}
+
+message EntityInfo {
+    string entity_type = 1;
+    map<string, string> metadata = 2;
+}
+
+//------------ Entity(END) ------------
+
+//------------ Event ------------
+enum EventType {
+    PUT = 0;
+    DELETE = 1;
+}
+//------------ Event(END) ------------
+
+//------------ Pub/sub ------------
+message Topic {
+    string name = 1;
+}
+
+message Subscription {
+    enum Status {
+        Enable = 0;
+        Disable = -1;
+    }
+    string id = 2;
+    int64 refresh_time = 3;
+    Status status = 4;
+    string user_id = 5;
+    string topic_filter = 10;
+    QoS qos = 11;
+}
+
+message SubscriptionReply {
+    string topic_filter = 1;
+    SubAckCode code = 2;
+    enum SubAckCode {
+        OK_QoS0 = 0;
+        OK_QoS1 = 1;
+        OK_QoS2 = 2;
+        ERROR_QoS2 = 128;
+    }
+}
+
+message SubscriptionValue {
+    Subscription subscription = 10;
+    Flow sink = 11;
+    int64 resource_version = 12;
+}
+
+message SubscriptionEvent {
+    EventType type = 10;
+    SubscriptionValue kv = 11;
+}
+
+enum SessionType {
+    TRANSIENT = 0; //clear_session = 1 (default)
+    PERSISTENT = 1; //clear_session = 0
+}
+//------------ Pub/sub(END) ------------
+
+//------------ Service ------------
+message Service {
+    string id = 1;
+    int64 refresh_time = 2;
+    int64 version = 3;
+    Flow sink = 4;
+}
+
+message ServiceValue {
+    Service service = 10;
+    int64 resource_version = 12;
+}
+
+message ServiceEvent {
+    EventType type = 10;
+    ServiceValue kv = 11;
+}
+//------------ Service(END) ------------
+
+//------------ Route ------------
+message Route {
+    string id = 1;
+    int64 refresh_time = 2;
+    int64 version = 3;
+    string user_id = 5;
+    string topic_filter = 10;
+    Service service = 11;
+    string entity = 12;
+}
+
+message RouteValue {
+    Route route = 10;
+    int64 resource_version = 12;
+}
+
+message RouteEvent {
+    EventType type = 10;
+    RouteValue kv = 11;
+}
+//------------ Route(END) ------------
+
+//------------ Rule ------------
+message RuleQL {
+    string id = 1;
+    int64 refresh_time = 2;
+    int64 version = 3;
+    string user_id = 5;
+    string topic_filter = 10;
+    bytes body = 11;
+    repeated Action actions = 12;
+    Action error_action = 13;
+}
+
+message RuleValue {
+    RuleQL rule = 10;
+    int64 resource_version = 12;
+}
+
+message RuleEvent {
+    EventType type = 10;
+    RuleValue kv = 11;
+}
+
+//------------ Rule(END) ------------
+
+//------------ Action ------------
+message Flow {
+    string URI = 10; // qingmq://127.0.0.1:5555/my_topic
+}
+
+message Action {
+    string id = 1;
+    string type = 10;
+    string sink = 11;
+    map<string, string> metadata = 12;
+    bytes body = 13;
+    bool  error_flag = 14;
+}
+//------------ Action(END) ------------
+
+//------------ Stream -------------
+// [Packet:[Message:body]]
+message ProtoMessage {
+    string id = 1;
+    bytes raw_data = 2;
+    map<string, string> matedata = 3;
+    google.protobuf.Timestamp time = 12 [(gogoproto.nullable) = false];
+}
+
+//------------ Stream (END) ------------
+
+
+
+// ContainerMetrics sets resource usage metrics of a container.
+message ContainerMetrics {
+    string name = 1;
+
+    // The memory usage is the memory working set.
+    map<string, string> usage = 2;
+}

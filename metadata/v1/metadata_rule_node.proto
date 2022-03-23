@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package mdmp.metadata;
+option go_package = "v1";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "metadata/v1/metadata_model.proto";
+
+service RulexNodeAction {
+    rpc ExecRule (RuleExecRequest) returns (RuleExecResponse);
+    rpc ExecAction (ActionExecRequest) returns (ActionExecResponse);
+}
+
+message RuleExecRequest {
+    string user_id = 1;
+    int64 packet_id = 10;
+    RuleQL rule = 11;
+    ProtoMessage message = 12;
+}
+
+message RuleExecResponse {
+    string user_id = 1;
+    int32 err_code = 2;
+    string err_msg = 3;
+    int64 packet_id = 10;
+    RuleQL rule = 11;
+    ProtoMessage message = 12;
+}
+
+
+message ActionExecRequest {
+    string user_id = 1;
+    int64 packet_id = 10;
+    Action action = 11;
+}
+
+message ActionExecResponse {
+    string user_id = 1;
+    int32 err_code = 2;
+    string err_msg = 3;
+    int64 packet_id = 10;
+}

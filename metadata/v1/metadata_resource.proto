@@ -1,0 +1,142 @@
+syntax = "proto3";
+
+package mdmp.metadata;
+option go_package = "v1";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "metadata/v1/metadata_model.proto";
+import "github.com/gogo/googleapis/google/api/annotations.proto";
+
+
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.equal_all) = false;
+option (gogoproto.gostring_all) = false;
+option cc_enable_arenas = true;
+
+
+service ResourcesManager {
+    rpc List (ResourcesRequest) returns (stream ResourcesResponse);
+    rpc Watch (ResourcesRequest) returns (stream ResourcesResponse);
+    rpc ListAndWatch (ResourcesRequest) returns (stream ResourcesResponse);
+
+    // Range gets the resource in the range from the store.
+    rpc Range(ResourceRangeRequest) returns (ResourceRangeResponse);
+}
+
+
+message ResourcesRequest {
+    RequestHeader header = 2;
+    int64 resource_version = 10;
+}
+
+message ResourcesResponse {
+    ResponseHeader header = 2;
+    repeated ResourceObject Body = 3;
+}
+
+
+message ResourceObject {
+    enum EventType {
+        ADDED = 0;
+        MODIFIED = 1;
+        DELETED = 2;
+        ERROR = 3;
+    }
+    EventType type = 10;
+    int64 resource_version = 11;
+    oneof body {
+        Init init_config = 12;
+        Stream stream = 13;
+        Subscription subscription = 14;
+        RuleQL rule = 15;
+        Route route = 16;
+        Service service = 17;
+    }
+}
+
+message Init {
+}
+
+message Stream {
+    repeated Flow source = 10;
+    Flow sink = 11;
+    Flow pub_sub_topic = 12;
+    Flow pub_sub_queue = 13;
+    Flow rule_topic = 14;
+}
+
+
+message ResourceRangeRequest {
+    enum SortOrder {
+        NONE = 0; // default, no sorting
+        ASCEND = 1; // lowest target value first
+        DESCEND = 2; // highest target value first
+    }
+    enum SortTarget {
+        KEY = 0;
+    }
+    enum Target {
+        Service = 0;
+        Entity = 1;
+        Stream = 2;
+        PubSub = 3;
+        Router = 4;
+        Rule = 5;
+    }
+    RequestHeader header = 1;
+
+    // key is the first key for the range. If range_end is not given, the request only looks up key.
+    bytes key = 19;
+    // range_end is the upper bound on the requested range [key, range_end).
+    // If range_end is '\0', the range is all keys >= key.
+    // If range_end is key plus one (e.g., "aa"+1 == "ab", "a\xff"+1 == "b"),
+    // then the range request gets all keys prefixed with key.
+    // If both key and range_end are '\0', then the range request returns all keys.
+    bytes range_end = 2;
+    // limit is a limit on the number of keys returned for the request. When limit is set to 0,
+    // it is treated as no limit.
+    int64 limit = 3;
+    // revision is the point-in-time of the key-value store to use for the range.
+    // If revision is less or equal to zero, the range is over the newest key-value store.
+    // If the revision has been compacted, ErrCompacted is returned as a response.
+    int64 revision = 4;
+
+    // sort_order is the order for returned sorted results.
+    SortOrder sort_order = 5;
+
+    // sort_target is the key-value field to use for sorting.
+    SortTarget sort_target = 6;
+
+    // keys_only when set returns only the keys and not the values.
+    bool keys_only = 8;
+
+    // count_only when set returns only the count of the keys in the range.
+    bool count_only = 9;
+
+    // sort_target is the key-value field to use for sorting.
+    Target target = 20;
+
+    // min_mod_revision is the lower bound for returned key mod revisions; all keys with
+    // lesser mod revisions will be filtered away.
+    int64 min_resource_version = 21;
+
+    // max_mod_revision is the upper bound for returned key mod revisions; all keys with
+    // greater mod revisions will be filtered away.
+    int64 max_resource_version = 22;
+}
+
+message ResourceRangeResponse {
+    ResponseHeader header = 2;
+    // Body is the list of key-value pairs matched by the range request.
+    // Body is empty when count is requested.
+    repeated ResourceKV Body = 10;
+    // more indicates if there are more keys to return in the requested range.
+    bool more = 11;
+    // count is set to the number of keys within the range when requested.
+    int64 count = 12;
+}
+
+message   ResourceKV {
+    string name = 1;
+    string value = 2;
+}

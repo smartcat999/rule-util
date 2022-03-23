@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package mdmp.metadata;
+option go_package = "v1";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "metadata/v1/metadata_model.proto";
+
+
+service RuleAction {
+    // Rule
+    rpc AddRule (RuleRequest) returns (RuleResponse);
+    rpc DelRule (RuleRequest) returns (RuleResponse);
+    // Routing Table
+    rpc AddRouteTable (RouteTableRequest) returns (RouteTableResponse);
+    rpc DelRouteTable (RouteTableRequest) returns (RouteTableResponse);
+}
+
+message RuleRequest {
+    enum Status {
+        Enable = 0;
+        Disable = -1;
+    }
+    RequestHeader header = 2;
+    int64 packet_id = 10;
+    RuleQL rule = 11;
+}
+
+message RuleResponse {
+    enum Status {
+        Enable = 0;
+        Disable = -1;
+    }
+    ResponseHeader header = 2;
+    int64 packet_id = 10;
+    RuleQL rule_ql = 11;
+}
+
+message RouteTableRequest {
+    enum Status {
+        Enable = 0;
+        Disable = -1;
+    }
+    RequestHeader header = 2;
+    int64 packet_id = 10;
+    RuleQL rule = 11;
+    string dst_topic = 12;
+}
+
+message RouteTableResponse {
+    enum Status {
+        Enable = 0;
+        Disable = -1;
+    }
+    ResponseHeader header = 2;
+    int64 packet_id = 10;
+    RuleQL rule_ql = 11;
+    string dst_topic = 12;
+}
