@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package pb;
+
+// Interface exported internally.
+// For control purpose
+service InternalSvc {
+    // Dispatch message to the specific entity.
+    rpc Dispatch(DispatchRequest) returns (CommonResponse) {}
+
+    // Disconnect the specific connection.
+    rpc Disconnect(DisconnectRequest) returns (CommonResponse) {}
+}
+
+message DispatchRequest {
+    // Name/ID of the entity which is the destination.
+    string target = 1;
+
+    // Message body.
+    bytes message = 2;
+}
+
+message CommonResponse {
+    // Success or fail.
+    bool Success = 1;
+
+    // Status code.
+    int32 code = 2;
+
+    // Status details.
+    bytes details = 3;
+}
+
+message DisconnectRequest {
+    // Name/ID of the entity which is the destination.
+    string target = 1;
+}
