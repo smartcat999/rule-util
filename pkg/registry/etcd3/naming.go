@@ -105,9 +105,16 @@ func (dc *Discovery) withAlive(path string, metadata string, ttl int64) error {
 		return err
 	}
 
-	_, err = dc.client.KeepAlive(context.Background(), leaseResp.ID)
+	ch, err := dc.client.KeepAlive(context.Background(), leaseResp.ID)
 	if err != nil {
 		return err
+	} else {
+		go func() {
+			for {
+				_ = <-ch
+				//			log.Debug("keep alive", zap.Int64("ttl", ka.TTL))
+			}
+		}()
 	}
 	return nil
 }

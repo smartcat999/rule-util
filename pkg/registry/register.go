@@ -101,8 +101,15 @@ func Register(ctx context.Context, endpoints []string, key string, value string)
 	}
 
 	//keepalive
-	if _, err = lease.KeepAlive(context.Background(), leaseID); nil != err {
+	if ch, err := lease.KeepAlive(context.Background(), leaseID); nil != err {
 		return err
+	} else {
+		go func() {
+			for {
+				_ = <-ch
+				//	log.Debug("keep alive", zap.Int64("ttl", ka.TTL))
+			}
+		}()
 	}
 	return nil
 
