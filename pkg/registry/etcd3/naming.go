@@ -105,14 +105,32 @@ func (dc *Discovery) withAlive(path string, metadata string, ttl int64) error {
 		return err
 	}
 
+	leaseId := int64(leaseResp.ID)
 	ch, err := dc.client.KeepAlive(context.Background(), leaseResp.ID)
 	if err != nil {
 		return err
 	} else {
 		go func() {
 			for {
-				_ = <-ch
+				select {
+				case resp := <-ch:
+					if resp == nil {
+						dc.logger.Bg().Info("lease: exit",
+							logf.Int64("leaseId", leaseId),
+							logf.Int64("ttl", ttl),
+						)
+						return
+					} else {
+						dc.logger.Bg().Info("lease: success",
+							logf.Int64("leaseId", leaseId),
+							logf.Int64("ttl", ttl),
+						)
+						goto END
+					}
+				}
 				//			log.Debug("keep alive", zap.Int64("ttl", ka.TTL))
+			END:
+				time.Sleep(time.Millisecond * 100)
 			}
 		}()
 	}
